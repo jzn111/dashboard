@@ -24,6 +24,7 @@ const loadData = async () => {
     $('#sub-title').text(data.title + ' · 数据来源：课程统一数据集');
     $('#status').hide();
     renderCards(data);
+    renderBarChart(data);
   } catch (error) {
     // 网络层失败（断网）或解析层失败（JSON损坏）都进这里
     showStatus('加载失败：' + error.message, true);
@@ -46,6 +47,27 @@ const renderCards = (data) => {
         </div>
       </div>
     `);
+  });
+};
+
+// 第二步：ECharts 柱状图——各月各品类借阅量对比
+// init 只做一次：容器拿到的图表实例缓存下来，重复加载只 setOption
+let barChart = null;
+const renderBarChart = (data) => {
+  if (barChart === null) {
+    barChart = echarts.init(document.querySelector('#bar-chart'));
+  }
+  barChart.setOption({
+    title: { text: '各月各品类借阅量（单位：册）', left: 'center' },
+    tooltip: { trigger: 'axis' },
+    legend: { bottom: 0 },
+    xAxis: { data: data.months },
+    yAxis: { name: '册' },
+    series: data.series.map(s => ({
+      name: s.category,
+      type: 'bar',
+      data: s.counts
+    }))
   });
 };
 
