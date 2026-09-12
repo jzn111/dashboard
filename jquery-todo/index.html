@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>任务清单（jQuery版）</title>
+  <style>
+    body { font-family: "Microsoft YaHei", sans-serif; max-width: 520px; margin: 30px auto; padding: 0 16px; color: #222; }
+    h1 { font-size: 24px; }
+    .form-row { display: flex; gap: 8px; margin-bottom: 8px; }
+    #task-input { flex: 1; padding: 6px 10px; font-size: 15px; }
+    button { padding: 6px 14px; cursor: pointer; }
+    #tip { color: #c00; font-size: 14px; min-height: 20px; margin: 4px 0 8px; }
+    .filters { margin-bottom: 12px; display: flex; gap: 8px; }
+    .filters button { background: #eee; border: 1px solid #ccc; border-radius: 4px; }
+    .filters button.active { background: #0d6efd; color: #fff; border-color: #0d6efd; }
+    #task-list { list-style: none; padding: 0; margin: 0; }
+    #task-list li { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; border-bottom: 1px solid #eee; cursor: pointer; }
+    #task-list li.done .text { color: #999; text-decoration: line-through; }
+    .delete { background: none; border: none; color: #c00; font-size: 13px; }
+    .empty { color: #999; list-style: none; }
+  </style>
+</head>
+<body>
+  <h1>任务清单（jQuery版）</h1>
+  <form id="add-form" class="form-row">
+    <input type="text" id="task-input" placeholder="要做什么？">
+    <button type="submit">添加</button>
+  </form>
+  <p id="tip"></p>
+  <div class="filters">
+    <button type="button" data-filter="all" class="active">全部</button>
+    <button type="button" data-filter="active">未完成</button>
+    <button type="button" data-filter="done">已完成</button>
+  </div>
+  <ul id="task-list"></ul>
+
+  <!-- 铁律：先引入jQuery，再写自己的代码 -->
+  <script src="libs/jquery-3.7.1.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
