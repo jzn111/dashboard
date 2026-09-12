@@ -117,6 +117,18 @@ const renderBarChart = (data) => {
     : data.series.filter(s => s.category === activeCategory);
   if (barChart === null) {
     barChart = echarts.init(document.querySelector('#bar-chart'));
+    // 研究2：ECharts 点击事件——点柱子联动高亮折线图对应月份
+    barChart.on('click', (params) => {
+      if (!lineChart || !state.data) return;
+      const idx = data.months.indexOf(params.name);
+      const ds = lineChart.data.datasets[0];
+      // 每个点一个半径：被选中的点放大到 8，其余 3
+      ds.pointRadius = data.months.map((m, i) => (i === idx ? 8 : 3));
+      ds.pointBackgroundColor = data.months.map((m, i) => (i === idx ? '#dc3545' : 'rgba(13,110,253,.8)'));
+      lineChart.update();
+      const value = ds.data[idx];
+      $('#linkage-result').html('已联动高亮：<strong>' + params.name + '</strong>，当月总支出 <strong>' + value + '</strong> 元');
+    });
   }
   barChart.setOption({
     title: { text: '各月分类支出对比（单位：元）', left: 'center' },
@@ -228,6 +240,20 @@ const runTimingExperiment = async () => {
   console.log('[研究1]', text);
 };
 $('#timing-btn').on('click', runTimingExperiment);
+
+// 研究3：误导图表对照——只改 y 轴起点，同一数据观感完全不同
+$('#axis-honest').on('click', () => {
+  if (!lineChart) return;
+  lineChart.options.scales.y.min = 0;          // 诚实版本：从 0 开始
+  $('#axis-warning').hide();
+  lineChart.update();
+});
+$('#axis-truncated').on('click', () => {
+  if (!lineChart) return;
+  lineChart.options.scales.y.min = 1000;       // 反面教材：截断坐标轴
+  $('#axis-warning').show();
+  lineChart.update();
+});
 
 $('#retry-btn').on('click', () => loadData());
 
