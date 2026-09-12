@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>校园自习室实时看板</title>
+  <link href="libs/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .chart-box { height: 380px; }
+    #status { display: none; }
+    #building-filters button { margin-right: 6px; margin-bottom: 6px; }
+    .table td, .table th { vertical-align: middle; }
+  </style>
+</head>
+<body class="container py-4">
+  <header>
+    <h1 class="h3">校园自习室实时看板</h1>
+    <p class="text-muted mb-1" id="sub-title">校园自习室信息 · 单位：座</p>
+    <p class="text-muted small" id="source-note">数据来源：课程统一数据集（教学演示数据，非真实统计）</p>
+  </header>
+
+  <p id="status" class="alert alert-warning">
+    <span id="status-text"></span>
+    <button id="retry-btn" class="btn btn-sm btn-primary ms-2" style="display:none;">重试</button>
+  </p>
+
+  <section class="row g-3 mb-4" id="cards"></section>
+
+  <section class="row g-3">
+    <div class="col-lg-7">
+      <h2 class="h5">各楼座位与占用对比（ECharts柱状图，单位：座）</h2>
+      <div id="bar-chart" class="chart-box"></div>
+    </div>
+    <div class="col-lg-5">
+      <h2 class="h5">各楼已占用座位占比（Chart.js环形图）</h2>
+      <div class="chart-box"><canvas id="pie-chart"></canvas></div>
+    </div>
+  </section>
+
+  <section class="mt-4">
+    <h2 class="h5">自习室明细（点击按钮按楼筛选）</h2>
+    <div id="building-filters" class="mb-2"></div>
+    <div class="table-responsive">
+      <table class="table table-bordered table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>自习室</th>
+            <th>楼栋</th>
+            <th>楼层</th>
+            <th>总座位</th>
+            <th>已占用</th>
+            <th>上座率</th>
+            <th>状态</th>
+            <th>开放时间</th>
+          </tr>
+        </thead>
+        <tbody id="room-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <script src="libs/jquery-3.7.1.min.js"></script>
+  <script src="libs/bootstrap.bundle.min.js"></script>
+  <script src="libs/echarts.min.js"></script>
+  <script src="libs/chart.umd.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
