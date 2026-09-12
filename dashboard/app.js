@@ -108,6 +108,12 @@ window.addEventListener('resize', () => {
   if (barChart) barChart.resize();
 });
 
+// 第四步（选做）：卡片点击高亮——jQuery 内置事件委托
+// 卡片是异步渲染出来的，直接给 .card 绑事件会绑空；委托给已存在的父元素 #cards
+$('#cards').on('click', '.card', function () {
+  $(this).toggleClass('border-primary shadow');
+});
+
 // 失败状态下点重试，重新走一遍加载流程
 $('#retry-btn').on('click', () => {
   loadData();
