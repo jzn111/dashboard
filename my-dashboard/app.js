@@ -286,7 +286,7 @@ $('#axis-honest').on('click', () => {
 });
 $('#axis-truncated').on('click', () => {
   if (!axisChart) return;
-  axisChart.options.scales.y.min = 700;       // 反面教材：截断坐标轴
+  axisChart.options.scales.y.min = 500;       // 反面教材：截断坐标轴（最低月份593册仍可见）
   $('#axis-warning').show();
   axisChart.update();
 });
