@@ -1,6 +1,6 @@
 // app.js — 个人消费记账看板（自主实践）
 // 主题：消费记账。数据流：fetch 本地 JSON → 状态处理 → 卡片/图表渲染
-const state = { data: null };
+const state = { data: null, budget: null };
 
 // ?empty=1 时加载空数据文件，方便演示"空数据"状态，不用临时改 JSON
 const isEmptyDemo = new URLSearchParams(location.search).get('empty') === '1';
@@ -12,17 +12,29 @@ const showStatus = (msg, withRetry) => {
   $('#status').show();
 };
 
+// fetch + 三层检查（HTTP层、解析层）的小封装
+const fetchJson = async (url) => {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error('HTTP ' + response.status + '（' + url + '）');
+  }
+  return response.json();
+};
+
 const loadData = async () => {
-  showStatus('加载中...', false);
+  showStatus('加载中... 正在并行请求 2 份数据', false);
   try {
     // 本地文件几乎瞬间返回，这里短暂停留让"加载中"状态能被观察和截图
     await new Promise(resolve => setTimeout(resolve, 450));
 
-    const response = await fetch(DATA_URL);
-    if (!response.ok) {
-      throw new Error('HTTP ' + response.status);
-    }
-    const data = await response.json();
+    // 研究1：Promise.all 同时发出两个请求，总耗时 ≈ 最慢的那一个
+    const [data, budget] = await Promise.all([
+      fetchJson(DATA_URL),
+      fetchJson('data/budget.json')
+    ]);
+    state.budget = budget;
+    showStatus('全部数据加载完成（消费 + 预算）', false);
+    await new Promise(resolve => setTimeout(resolve, 400));
 
     // 状态三：请求成功但没有数据——显示提示而不是白屏
     if (!data.series || data.series.length === 0) {
@@ -39,6 +51,7 @@ const loadData = async () => {
     renderBarChart(data);
     renderLineChart(data);
     renderPieChart(data);
+    runTimingExperiment(); // 首次加载后自动计时一次，结果显示在研究卡片中
   } catch (error) {
     // 网络断开 / 文件不存在 / JSON 解析失败，三种错误都落到这里
     showStatus('加载失败：' + error.message + '（可在开发者工具 Network 勾 Offline 复现）', true);
@@ -129,17 +142,28 @@ const renderLineChart = (data) => {
   const monthlyTotals = data.months.map((m, i) =>
     data.series.reduce((sum, s) => sum + s.counts[i], 0)
   );
+  // 研究1 的第二份数据：预算线（虚线）一起画进折线图
+  const datasets = [{
+    label: '月度总支出',
+    data: monthlyTotals,
+    borderWidth: 2,
+    backgroundColor: 'rgba(13,110,253,.15)'
+  }];
+  if (state.budget) {
+    datasets.push({
+      label: '月度预算',
+      data: state.budget.budget,
+      borderWidth: 2,
+      borderDash: [6, 4],
+      pointRadius: 2
+    });
+  }
   const ctx = document.querySelector('#line-chart');
   lineChart = new Chart(ctx, {
     type: 'line',
     data: {
       labels: data.months,
-      datasets: [{
-        label: '月度总支出',
-        data: monthlyTotals,
-        borderWidth: 2,
-        backgroundColor: 'rgba(13,110,253,.15)'
-      }]
+      datasets: datasets
     },
     options: {
       responsive: true,
@@ -182,6 +206,28 @@ window.addEventListener('resize', () => {
   if (barChart) barChart.resize();
   if (pieChart) pieChart.resize();
 });
+
+// 研究1：串行 await 与 Promise.all 并行的总耗时对比
+const runTimingExperiment = async () => {
+  const a = DATA_URL;
+  const b = 'data/budget.json';
+  // 串行：第一个请求完成后才发第二个，总耗时 = 两者之和
+  const t1 = performance.now();
+  await fetchJson(a);
+  await fetchJson(b);
+  const serialMs = (performance.now() - t1).toFixed(2);
+
+  // 并行：两个请求同时发出，总耗时 ≈ 较慢的一个
+  const t2 = performance.now();
+  await Promise.all([fetchJson(a), fetchJson(b)]);
+  const parallelMs = (performance.now() - t2).toFixed(2);
+
+  const text = '串行：' + serialMs + ' ms ｜ Promise.all并行：' + parallelMs +
+    ' ms（本地localhost差距很小，真实网络下并行省下的是一个完整往返时延）';
+  $('#timing-result').text(text);
+  console.log('[研究1]', text);
+};
+$('#timing-btn').on('click', runTimingExperiment);
 
 $('#retry-btn').on('click', () => loadData());
 

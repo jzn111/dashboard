@@ -47,6 +47,40 @@
       <h2 class="h5">上半年各类支出占比（ECharts饼图）</h2>
       <div id="pie-chart" class="chart-box"></div>
     </div>
+    <div class="col-lg-6">
+      <h2 class="h5">独立研究：并行加载与图表联动</h2>
+      <div class="card mb-3">
+        <div class="card-body">
+          <h3 class="h6">研究1：Promise.all 并行请求两份 JSON</h3>
+          <p class="small text-muted mb-2">页面初始化时并行加载消费数据与预算数据；点击按钮重复实验，对比串行 await 与 Promise.all 的总耗时。</p>
+          <button id="timing-btn" class="btn btn-sm btn-primary">重新计时对比</button>
+          <p id="timing-result" class="small mt-2 mb-0"></p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-body">
+          <h3 class="h6">研究2：图表联动</h3>
+          <p class="small text-muted mb-1">点击左侧柱状图中某个月的柱子，折线图会高亮该月的数据点。</p>
+          <p id="linkage-result" class="small mb-0">尚未点击柱子。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="row g-3 mt-1">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-body">
+          <h3 class="h6">研究3：误导图表修复对照（截断坐标轴）</h3>
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <button id="axis-honest" class="btn btn-sm btn-success">诚实版本（y轴从0开始）</button>
+            <button id="axis-truncated" class="btn btn-sm btn-outline-danger">反面教材（截断y轴）</button>
+            <span id="axis-warning" class="text-danger small fw-bold" style="display:none;">⚠ 反面教材：y轴从1000元开始，几百元的差距被画成数倍，故意夸大了波动。</span>
+          </div>
+          <p class="small text-muted mb-0">同一组月度总支出数据，仅改变 y 轴起点，观感完全不同。</p>
+        </div>
+      </div>
+    </div>
   </section>
 
   <script src="libs/jquery-3.7.1.min.js"></script>
