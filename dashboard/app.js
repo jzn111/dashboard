@@ -25,6 +25,7 @@ const loadData = async () => {
     $('#status').hide();
     renderCards(data);
     renderBarChart(data);
+    renderLineChart(data);
   } catch (error) {
     // 网络层失败（断网）或解析层失败（JSON损坏）都进这里
     showStatus('加载失败：' + error.message, true);
@@ -70,6 +71,42 @@ const renderBarChart = (data) => {
     }))
   });
 };
+
+// 第三步：Chart.js 折线图——借阅趋势
+// 同一个 canvas 不能重复 new Chart()，重渲染前先 destroy 旧实例
+let lineChart = null;
+const renderLineChart = (data) => {
+  if (lineChart !== null) {
+    lineChart.destroy();
+  }
+  const ctx = document.querySelector('#line-chart');
+  lineChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: data.months,
+      datasets: data.series.map(s => ({
+        label: s.category,
+        data: s.counts,
+        borderWidth: 1
+      }))
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: { beginAtZero: true, title: { display: true, text: '册' } }
+      },
+      plugins: {
+        title: { display: true, text: '借阅趋势（单位：册）' }
+      }
+    }
+  });
+};
+
+// ECharts 不会自动响应窗口变化，拉伸窗口时手动 resize；Chart.js 默认自动
+window.addEventListener('resize', () => {
+  if (barChart) barChart.resize();
+});
 
 // 失败状态下点重试，重新走一遍加载流程
 $('#retry-btn').on('click', () => {
