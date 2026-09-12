@@ -35,8 +35,10 @@ const loadData = async () => {
     $('#source-note').text('数据来源：' + data.source + ' · 时间范围：2026年1-6月');
     $('#status').hide();
     renderCards(data);
+    renderFilters(data);
     renderBarChart(data);
     renderLineChart(data);
+    renderPieChart(data);
   } catch (error) {
     // 网络断开 / 文件不存在 / JSON 解析失败，三种错误都落到这里
     showStatus('加载失败：' + error.message + '（可在开发者工具 Network 勾 Offline 复现）', true);
@@ -60,6 +62,7 @@ const renderCards = (data) => {
     { label: '数据点数', value: pointCount + ' 条（' + data.series.length + '类×' + data.months.length + '月）' }
   ];
 
+  $('#cards').empty(); // 重试时先清空，避免卡片重复追加
   cards.forEach(c => {
     $('#cards').append(`
       <div class="col-md-3 col-6">
@@ -74,9 +77,31 @@ const renderCards = (data) => {
   });
 };
 
+// jQuery 交互状态：当前筛选的品类，'all' 表示全部
+let activeCategory = 'all';
+
+// 依据数据动态生成筛选按钮（事件委托：点哪个按钮都在父容器上统一处理）
+const renderFilters = (data) => {
+  const $box = $('#category-filters').empty();
+  $box.append('<button type="button" class="btn btn-primary" data-cat="all">全部</button>');
+  data.series.forEach(s => {
+    $box.append('<button type="button" class="btn btn-outline-primary" data-cat="' + s.category + '">' + s.category + '</button>');
+  });
+};
+$('#category-filters').on('click', 'button', function () {
+  activeCategory = $(this).data('cat');
+  $('#category-filters button')
+    .removeClass('btn-primary').addClass('btn-outline-primary');
+  $(this).removeClass('btn-outline-primary').addClass('btn-primary');
+  if (state.data) renderBarChart(state.data); // 只重画柱状图，折线/饼图保持全局口径
+});
+
 // 图表一：ECharts 柱状图——回答"哪个月、哪类花得多"，分类比较用柱状图
 let barChart = null;
 const renderBarChart = (data) => {
+  const visible = activeCategory === 'all'
+    ? data.series
+    : data.series.filter(s => s.category === activeCategory);
   if (barChart === null) {
     barChart = echarts.init(document.querySelector('#bar-chart'));
   }
@@ -86,12 +111,12 @@ const renderBarChart = (data) => {
     legend: { bottom: 0 },
     xAxis: { data: data.months },
     yAxis: { name: '元' },
-    series: data.series.map(s => ({
+    series: visible.map(s => ({
       name: s.category,
       type: 'bar',
       data: s.counts
     }))
-  });
+  }, true); // 第二个参数 true：不与上一次 option 合并，避免筛掉的品类残留
 };
 
 // 图表二：Chart.js 折线图——回答"半年总支出怎么变化"，时间趋势用折线图
@@ -129,8 +154,33 @@ const renderLineChart = (data) => {
   });
 };
 
+// 图表三：ECharts 饼图——回答"各品类占总支出多少"，部分与整体用饼图（4类，适合）
+let pieChart = null;
+const renderPieChart = (data) => {
+  const pieData = data.series.map(s => ({
+    name: s.category,
+    value: s.counts.reduce((sum, n) => sum + n, 0)
+  }));
+  if (pieChart === null) {
+    pieChart = echarts.init(document.querySelector('#pie-chart'));
+  }
+  pieChart.setOption({
+    title: { text: '上半年各类支出占比（单位：元）', left: 'center' },
+    tooltip: { trigger: 'item', formatter: '{b}：{c}元（{d}%）' },
+    legend: { bottom: 0 },
+    series: [{
+      name: '品类占比',
+      type: 'pie',
+      radius: '60%',
+      data: pieData,
+      label: { show: true, formatter: '{b}: {d}%' } // 直接显示百分比
+    }]
+  });
+};
+
 window.addEventListener('resize', () => {
   if (barChart) barChart.resize();
+  if (pieChart) pieChart.resize();
 });
 
 $('#retry-btn').on('click', () => loadData());
