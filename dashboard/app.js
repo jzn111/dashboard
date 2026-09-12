@@ -21,7 +21,9 @@ const loadData = async () => {
       return;
     }
     state.data = data;
-    $('#sub-title').text(data.title + ' · 数据来源：课程统一数据集');
+    // 统一数据集带 period/source 字段，有则显示；自建数据退回默认文案
+    const period = data.period ? '（' + data.period + '）' : '';
+    $('#sub-title').text((data.title || '图书馆数据看板') + period + ' · ' + (data.source || '数据来源：课程统一数据集'));
     $('#status').hide();
     renderCards(data);
     renderBarChart(data);
