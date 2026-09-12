@@ -241,19 +241,56 @@ const runTimingExperiment = async () => {
 };
 $('#timing-btn').on('click', runTimingExperiment);
 
-// 研究3：误导图表对照——只改 y 轴起点，同一数据观感完全不同
+// 研究3：误导图表修复——独立加载课程统一数据集（图书馆借阅月报）做诚实/截断对照
+let axisChart = null;
+const initAxisChart = async () => {
+  try {
+    const lib = await fetchJson('data/library.json');
+    // 把6个品类各月借阅量汇总成"全品类月度借阅总量"
+    const monthlyTotals = lib.months.map((m, i) =>
+      lib.series.reduce((sum, s) => sum + s.counts[i], 0)
+    );
+    const ctx = document.querySelector('#axis-chart');
+    axisChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: lib.months,
+        datasets: [{
+          label: '全品类月度借阅总量（册）',
+          data: monthlyTotals,
+          borderWidth: 2,
+          backgroundColor: 'rgba(13,110,253,.12)'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: { beginAtZero: true, title: { display: true, text: '单位：册' } }
+        },
+        plugins: {
+          title: { display: true, text: '各月借阅总量 · 数据来源：' + lib.source + '（' + lib.period + '）' }
+        }
+      }
+    });
+  } catch (e) {
+    console.error('[研究3] 课程统一数据集加载失败：', e);
+  }
+};
+
 $('#axis-honest').on('click', () => {
-  if (!lineChart) return;
-  lineChart.options.scales.y.min = 0;          // 诚实版本：从 0 开始
+  if (!axisChart) return;
+  axisChart.options.scales.y.min = 0;          // 诚实版本：从 0 开始
   $('#axis-warning').hide();
-  lineChart.update();
+  axisChart.update();
 });
 $('#axis-truncated').on('click', () => {
-  if (!lineChart) return;
-  lineChart.options.scales.y.min = 1000;       // 反面教材：截断坐标轴
+  if (!axisChart) return;
+  axisChart.options.scales.y.min = 700;       // 反面教材：截断坐标轴
   $('#axis-warning').show();
-  lineChart.update();
+  axisChart.update();
 });
+initAxisChart();
 
 $('#retry-btn').on('click', () => loadData());
 
