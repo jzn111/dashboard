@@ -35,6 +35,8 @@ const loadData = async () => {
     $('#source-note').text('数据来源：' + data.source + ' · 时间范围：2026年1-6月');
     $('#status').hide();
     renderCards(data);
+    renderBarChart(data);
+    renderLineChart(data);
   } catch (error) {
     // 网络断开 / 文件不存在 / JSON 解析失败，三种错误都落到这里
     showStatus('加载失败：' + error.message + '（可在开发者工具 Network 勾 Offline 复现）', true);
@@ -71,6 +73,65 @@ const renderCards = (data) => {
     `);
   });
 };
+
+// 图表一：ECharts 柱状图——回答"哪个月、哪类花得多"，分类比较用柱状图
+let barChart = null;
+const renderBarChart = (data) => {
+  if (barChart === null) {
+    barChart = echarts.init(document.querySelector('#bar-chart'));
+  }
+  barChart.setOption({
+    title: { text: '各月分类支出对比（单位：元）', left: 'center' },
+    tooltip: { trigger: 'axis' },
+    legend: { bottom: 0 },
+    xAxis: { data: data.months },
+    yAxis: { name: '元' },
+    series: data.series.map(s => ({
+      name: s.category,
+      type: 'bar',
+      data: s.counts
+    }))
+  });
+};
+
+// 图表二：Chart.js 折线图——回答"半年总支出怎么变化"，时间趋势用折线图
+// 数据表达红线：y 轴从 0 开始，不截断坐标轴夸大波动
+let lineChart = null;
+const renderLineChart = (data) => {
+  if (lineChart !== null) {
+    lineChart.destroy();
+  }
+  const monthlyTotals = data.months.map((m, i) =>
+    data.series.reduce((sum, s) => sum + s.counts[i], 0)
+  );
+  const ctx = document.querySelector('#line-chart');
+  lineChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: data.months,
+      datasets: [{
+        label: '月度总支出',
+        data: monthlyTotals,
+        borderWidth: 2,
+        backgroundColor: 'rgba(13,110,253,.15)'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: { beginAtZero: true, title: { display: true, text: '单位：元' } }
+      },
+      plugins: {
+        title: { display: true, text: '月度总支出趋势（数据来源：' + data.source + '）' }
+      }
+    }
+  });
+};
+
+window.addEventListener('resize', () => {
+  if (barChart) barChart.resize();
+});
 
 $('#retry-btn').on('click', () => loadData());
 
