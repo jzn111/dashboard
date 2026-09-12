@@ -35,6 +35,7 @@ const loadData = async () => {
 // 统计卡片：每个品类一张，显示 N 个月累计借阅量
 const renderCards = (data) => {
   const months = data.months;
+  $('#cards').empty(); // 重试时先清空，避免卡片重复追加
   data.series.forEach(s => {
     const total = s.counts.reduce((sum, n) => sum + n, 0);
     $('#cards').append(`
